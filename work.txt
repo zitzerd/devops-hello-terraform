@@ -1,0 +1,12 @@
+aws ec2 describe-subnets --filters "Name=availabilityZone, Values=eu-west-1a, eu-west-1b" | jq  '.Subnets[]| "\(.AvailabilityZone) \(.SubnetId) \(.MapPublicIpOnLaunch) \(.CidrBlock)"'
+/mnt/c/temp/terraform import subnet-0d02d2d2addb7351e aws_subnet.private-0
+/mnt/c/temp/terraform import aws_subnet.private-0 subnet-0d02d2d2addb7351e
+/mnt/c/temp/terraform import aws_subnet.private-1 subnet-09cc34c502bc8858d
+/mnt/c/temp/terraform import aws_subnet.public-1 subnet-825207e4
+/mnt/c/temp/terraform import aws_subnet.public-0 subnet-33178069
+
+#Find the internet gateway
+ aws ec2 describe-internet-gateways | grep InternetGatewayId
+#import
+/mnt/c/temp/terraform import aws_internet_gateway.gateway  igw-97dbcef0
+
