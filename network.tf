@@ -15,8 +15,8 @@ resource "aws_internet_gateway" "gateway" {
 resource "aws_route" "internet_access" {
   route_table_id         = data.aws_vpc.default_vpc.main_route_table_id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.gateway.id  
-  
+  gateway_id             = aws_internet_gateway.gateway.id
+
 }
 
 #Mapped resoruces with terraform import so i use teh provided subnets
@@ -40,9 +40,9 @@ resource "aws_subnet" "private-1" {
   cidr_block                      = "172.31.128.0/21"
   map_public_ip_on_launch         = false
   tags = {
-    Name   = "${var.app_name} Private subnet 1"
-    Public = false
-    
+    Name        = "${var.app_name} Private subnet 1"
+    Application = var.app_name
+    Public      = false
   }
 }
 
@@ -54,8 +54,9 @@ resource "aws_subnet" "public-0" {
   cidr_block                      = "172.31.32.0/20"
   map_public_ip_on_launch         = true
   tags = {
-    Name   = "${var.app_name} Public subnet 0"
-    Public = true
+    Name        = "${var.app_name} Public subnet 0"
+    Application = var.app_name
+    Public      = true
   }
 }
 
@@ -66,8 +67,9 @@ resource "aws_subnet" "public-1" {
   cidr_block                      = "172.31.0.0/20"
   map_public_ip_on_launch         = true
   tags = {
-    Name   = "${var.app_name} Public subnet 1"
-    Public = true
+    Application = var.app_name
+    Name        = "${var.app_name} Public subnet 1"
+    Public      = true
   }
 }
 
@@ -77,6 +79,10 @@ resource "aws_eip" "gateway" {
   count      = 2
   vpc        = true
   depends_on = [aws_internet_gateway.gateway]
+  tags = {
+    Name = "${var.app_name} Elastic IP for Internet Gateway"
+    Application = var.app_name
+  }
 }
 
 //Create a NAT Gateway to allow access from internet to the private IPs of the public subnets
@@ -84,8 +90,9 @@ resource "aws_nat_gateway" "gateway" {
   count         = 2
   subnet_id     = element(var.public_subnets.*, count.index)
   allocation_id = element(aws_eip.gateway.*.id, count.index)
-   tags = {
-     Name = "${var.app_name} Nat Gateway ${count.index}"
+  tags = {
+    Application = var.app_name
+    Name = "${var.app_name} Nat Gateway ${count.index}"
   }
 }
 
@@ -100,6 +107,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
+    Application = var.app_name
     Name = "${var.app_name} ECS Private Route Table ${count.index}"
   }
 }
@@ -108,8 +116,8 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "private" {
   count          = 2
   subnet_id      = element(var.private_subnets.*, count.index)
-  route_table_id = element(aws_route_table.private.*.id, count.index)
-}   
+  route_table_id = element(aws_route_table.private.*.id, count.index)  
+}
 
 // Create a Security Group for the load balancer that will allow external access only to port 80 and allow outgoing traffic to any destination protocolo/port
 resource "aws_security_group" "alb" {
@@ -132,13 +140,14 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
+    Application = var.app_name
     Name = "${var.app_name} ALB Security Group"
   }
 }
 
 
 
-//Create a Security group for the tasks running on the cluster. This SG will only allow traffic comming from the LB on port 5000 thats the port our tasks listen and expose.
+//Create a Security group for the tasks running on the cluster. This SG will only allow traffic comming from the LB on port defined thats the port our tasks listen and expose.
 //Analizar como es el link... del ingres al security group del loadb
 resource "aws_security_group" "service_access" {
   name        = "ecs-service-sg"
@@ -147,8 +156,8 @@ resource "aws_security_group" "service_access" {
 
   ingress {
     protocol        = "tcp"
-    from_port       = 5000
-    to_port         = 5000
+    from_port       = var.task_port
+    to_port         = var.task_port
     cidr_blocks     = ["0.0.0.0/0"]
     security_groups = [aws_security_group.alb.id]
   }
@@ -161,7 +170,7 @@ resource "aws_security_group" "service_access" {
   }
 
   tags = {
-    Name = "${var.app_name} ECS-Service Security Group"
-    description="Allows the traffic from the load balancer to the ECS Service"
+    Application = var.app_name
+    Name        = "${var.app_name} ECS-Service Security Group"    
   }
 }

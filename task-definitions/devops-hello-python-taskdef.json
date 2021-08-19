@@ -2,15 +2,7 @@
     {
       "name": "${container_name}",
       "image": "${aws_ecr_repository}:${tag}",
-      "essential": true,
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-region": "${region}",
-          "awslogs-stream-prefix": "${awslogs_cloudwatch_group_name}-service",
-          "awslogs-group": "${awslogs_cloudwatch_group_name}"
-        }
-      },
+      "essential": true,      
       "portMappings": [
         {
           "containerPort": 5000,

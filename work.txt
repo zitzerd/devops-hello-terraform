@@ -10,3 +10,10 @@ aws ec2 describe-subnets --filters "Name=availabilityZone, Values=eu-west-1a, eu
 #import
 /mnt/c/temp/terraform import aws_internet_gateway.gateway  igw-97dbcef0
 
+#Get Execution role arn
+aws iam list-roles| jq  '.Roles[]| "\(.RoleName) \(.Arn)"' | grep ecsTask
+
+
+#push to ecr
+
+aws ecr get-login-password  | docker login --username AWS --password-stdin 

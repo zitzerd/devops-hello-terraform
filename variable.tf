@@ -17,6 +17,9 @@ variable "private_subnets" {
   default = []
 }
 
+variable "task_port" {
+  default = 5000
+}
 variable "ecs_execution_role_arn"{}
 
 variable "app_name" {}
